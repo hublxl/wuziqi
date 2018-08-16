@@ -52,6 +52,10 @@
 
 static  OS_TCB   AppTaskStartTCB;
 
+static  OS_TCB   AppTaskLed1TCB;
+static  OS_TCB   AppTaskLed2TCB;
+static  OS_TCB   AppTaskLed3TCB;
+
 
 /*
 *********************************************************************************************************
@@ -61,6 +65,10 @@ static  OS_TCB   AppTaskStartTCB;
 
 static  CPU_STK  AppTaskStartStk[APP_TASK_START_STK_SIZE];
 
+static  CPU_STK  AppTaskLed1Stk [ APP_TASK_LED1_STK_SIZE ];
+static  CPU_STK  AppTaskLed2Stk [ APP_TASK_LED2_STK_SIZE ];
+static  CPU_STK  AppTaskLed3Stk [ APP_TASK_LED3_STK_SIZE ];
+
 
 /*
 *********************************************************************************************************
@@ -68,9 +76,11 @@ static  CPU_STK  AppTaskStartStk[APP_TASK_START_STK_SIZE];
 *********************************************************************************************************
 */
 
-static  void  AppTaskCreate (void);
-static  void  AppObjCreate  (void);
 static  void  AppTaskStart  (void *p_arg);
+
+static  void  AppTaskLed1  ( void * p_arg );
+static  void  AppTaskLed2  ( void * p_arg );
+static  void  AppTaskLed3  ( void * p_arg );
 
 
 /*
@@ -91,8 +101,6 @@ int  main (void)
     OS_ERR  err;
 
 
-    BSP_IntDisAll();                                            /* Disable all interrupts.                              */
-
     OSInit(&err);                                               /* Init uC/OS-III.                                      */
 
     OSTaskCreate((OS_TCB     *)&AppTaskStartTCB,                /* Create the start task                                */
@@ -110,6 +118,8 @@ int  main (void)
                  (OS_ERR     *)&err);
 
     OSStart(&err);                                              /* Start multitasking (i.e. give control to uC/OS-III). */
+		
+		
 }
 
 
@@ -153,56 +163,122 @@ static  void  AppTaskStart (void *p_arg)
 
     CPU_IntDisMeasMaxCurReset();
 
-#if (APP_CFG_SERIAL_EN == DEF_ENABLED)
-    BSP_Ser_Init(115200);                                       /* Enable Serial Interface                              */
-#endif
-    
-    APP_TRACE_INFO(("Creating Application Tasks...\n\r"));
-    AppTaskCreate();                                            /* Create Application Tasks                             */
-    
-    APP_TRACE_INFO(("Creating Application Events...\n\r"));
-    AppObjCreate();                                             /* Create Application Objects                           */
-    
-    BSP_LED_Off(0);
+
+    OSTaskCreate((OS_TCB     *)&AppTaskLed1TCB,                /* Create the Led1 task                                */
+                 (CPU_CHAR   *)"App Task Led1",
+                 (OS_TASK_PTR ) AppTaskLed1,
+                 (void       *) 0,
+                 (OS_PRIO     ) APP_TASK_LED1_PRIO,
+                 (CPU_STK    *)&AppTaskLed1Stk[0],
+                 (CPU_STK_SIZE) APP_TASK_LED1_STK_SIZE / 10,
+                 (CPU_STK_SIZE) APP_TASK_LED1_STK_SIZE,
+                 (OS_MSG_QTY  ) 5u,
+                 (OS_TICK     ) 0u,
+                 (void       *) 0,
+                 (OS_OPT      )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR),
+                 (OS_ERR     *)&err);
+								 
+    OSTaskCreate((OS_TCB     *)&AppTaskLed2TCB,                /* Create the Led2 task                                */
+                 (CPU_CHAR   *)"App Task Led2",
+                 (OS_TASK_PTR ) AppTaskLed2,
+                 (void       *) 0,
+                 (OS_PRIO     ) APP_TASK_LED2_PRIO,
+                 (CPU_STK    *)&AppTaskLed2Stk[0],
+                 (CPU_STK_SIZE) APP_TASK_LED2_STK_SIZE / 10,
+                 (CPU_STK_SIZE) APP_TASK_LED2_STK_SIZE,
+                 (OS_MSG_QTY  ) 5u,
+                 (OS_TICK     ) 0u,
+                 (void       *) 0,
+                 (OS_OPT      )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR),
+                 (OS_ERR     *)&err);
+
+    OSTaskCreate((OS_TCB     *)&AppTaskLed3TCB,                /* Create the Led3 task                                */
+                 (CPU_CHAR   *)"App Task Led3",
+                 (OS_TASK_PTR ) AppTaskLed3,
+                 (void       *) 0,
+                 (OS_PRIO     ) APP_TASK_LED3_PRIO,
+                 (CPU_STK    *)&AppTaskLed3Stk[0],
+                 (CPU_STK_SIZE) APP_TASK_LED3_STK_SIZE / 10,
+                 (CPU_STK_SIZE) APP_TASK_LED3_STK_SIZE,
+                 (OS_MSG_QTY  ) 5u,
+                 (OS_TICK     ) 0u,
+                 (void       *) 0,
+                 (OS_OPT      )(OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR),
+                 (OS_ERR     *)&err);
+		
+		
+		OSTaskDel ( & AppTaskStartTCB, & err );
+		
+		
+}
+
+
+/*
+*********************************************************************************************************
+*                                          LED1 TASK
+*********************************************************************************************************
+*/
+
+static  void  AppTaskLed1 ( void * p_arg )
+{
+    OS_ERR      err;
+
+
+   (void)p_arg;
+
 
     while (DEF_TRUE) {                                          /* Task body, always written as an infinite loop.       */
-        BSP_LED_Toggle(0);
-        OSTimeDlyHMSM(0, 0, 0, 100,
-                      OS_OPT_TIME_HMSM_STRICT,
-                      &err);
+			macLED1_TOGGLE ();
+			OSTimeDly ( 1000, OS_OPT_TIME_DLY, & err );
     }
+		
+		
 }
 
 
 /*
 *********************************************************************************************************
-*                                      CREATE APPLICATION TASKS
-*
-* Description:  This function creates the application tasks.
-*
-* Arguments  :  none
-*
-* Returns    :  none
+*                                          LED2 TASK
 *********************************************************************************************************
 */
 
-static  void  AppTaskCreate (void)
+static  void  AppTaskLed2 ( void * p_arg )
 {
+    OS_ERR      err;
+
+
+   (void)p_arg;
+
+
+    while (DEF_TRUE) {                                          /* Task body, always written as an infinite loop.       */
+			macLED2_TOGGLE ();
+			OSTimeDly ( 5000, OS_OPT_TIME_DLY, & err );
+    }
+		
+		
 }
 
 
 /*
 *********************************************************************************************************
-*                                      CREATE APPLICATION EVENTS
-*
-* Description:  This function creates the application kernel objects.
-*
-* Arguments  :  none
-*
-* Returns    :  none
+*                                          LED3 TASK
 *********************************************************************************************************
 */
 
-static  void  AppObjCreate (void)
+static  void  AppTaskLed3 ( void * p_arg )
 {
+    OS_ERR      err;
+
+
+   (void)p_arg;
+
+
+    while (DEF_TRUE) {                                          /* Task body, always written as an infinite loop.       */
+			macLED3_TOGGLE ();
+			OSTimeDly ( 10000, OS_OPT_TIME_DLY, & err );
+    }
+		
+		
 }
+
+
